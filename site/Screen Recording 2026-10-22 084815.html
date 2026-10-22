@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Plan Expire အခြေအနေ UI နှင့် Extend လုပ်ဆောင်ချက်များ — Meeting Minutes</title>
+  <style>
+    :root {
+      --ink: #17202a; --muted: #65717e; --paper: #fbfaf7; --card: #fff;
+      --line: #e7e1d8; --accent: #126b63; --accent-soft: #e4f2ef;
+      --warm: #f2b84b; --shadow: 0 18px 50px rgba(29, 42, 50, .09);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; color: var(--ink); background: var(--paper);
+      font-family: Inter, "Noto Sans Myanmar", "Myanmar Text", "Pyidaungsu",
+        system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px; line-height: 1.72;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0 0 auto; height: 6px;
+      background: linear-gradient(90deg, var(--accent), var(--warm)); z-index: 5;
+    }
+    .page { max-width: 1120px; margin: 0 auto; padding: 72px 28px 90px; }
+    .hero {
+      position: relative; overflow: hidden; padding: clamp(34px, 7vw, 72px);
+      border-radius: 28px; color: #fff; background: #143f3c; box-shadow: var(--shadow);
+    }
+    .hero::after {
+      content: ""; position: absolute; width: 420px; height: 420px; right: -170px;
+      top: -210px; border-radius: 50%; border: 70px solid rgba(242,184,75,.22);
+    }
+    .eyebrow {
+      margin: 0 0 14px; color: #b8ddd8; font-size: .76rem; font-weight: 800;
+      letter-spacing: .17em; text-transform: uppercase;
+    }
+    h1 {
+      position: relative; z-index: 1; max-width: 800px; margin: 0;
+      font-family: Georgia, "Noto Sans Myanmar", "Myanmar Text", serif;
+      font-size: clamp(2.15rem, 6vw, 4.6rem); line-height: 1.08; letter-spacing: -.035em;
+    }
+    .meta-grid {
+      position: relative; z-index: 1; display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 42px;
+    }
+    .meta { padding: 14px 16px; border: 1px solid rgba(255,255,255,.15); border-radius: 14px; background: rgba(255,255,255,.07); }
+    .meta b { display: block; color: #a9cbc7; font-size: .68rem; letter-spacing: .11em; text-transform: uppercase; }
+    .meta span { display: block; overflow-wrap: anywhere; margin-top: 3px; font-size: .9rem; }
+    nav { display: flex; flex-wrap: wrap; gap: 9px; margin: 25px 0 48px; }
+    nav a { padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--accent); background: #fff; font-size: .82rem; font-weight: 700; text-decoration: none; }
+    main { display: grid; gap: 28px; }
+    section { scroll-margin-top: 24px; padding: clamp(24px, 5vw, 46px); border: 1px solid var(--line); border-radius: 22px; background: var(--card); box-shadow: 0 8px 30px rgba(29,42,50,.045); }
+    .section-heading { display: flex; align-items: baseline; gap: 14px; margin-bottom: 23px; }
+    .section-heading span { color: var(--accent); font: 700 .75rem/1 Georgia, serif; }
+    h2 { margin: 0; font-family: Georgia, "Noto Sans Myanmar", "Myanmar Text", serif; font-size: clamp(1.45rem, 3vw, 2.1rem); letter-spacing: -.02em; }
+    h3 { margin: 0 0 7px; font-size: 1rem; }
+    p { margin: 0; }
+    .summary { font-size: clamp(1.05rem, 2vw, 1.25rem); color: #2f3c43; }
+    .discussion-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+    .discussion-card { padding: 20px; border-left: 3px solid var(--warm); border-radius: 5px 14px 14px 5px; background: #faf8f3; }
+    .discussion-card p, .clean-list { color: #47545c; }
+    .source-time { display: inline-block; margin: 0 0 7px; color: var(--accent); font: 700 .72rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .open-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+    .open-grid h3 { padding-bottom: 8px; border-bottom: 2px solid var(--accent-soft); }
+    .decision-list, .clean-list { margin: 0; padding: 0; list-style: none; }
+    .decision-list li, .clean-list li { position: relative; padding: 10px 0 10px 30px; border-bottom: 1px solid var(--line); }
+    .decision-list li:last-child, .clean-list li:last-child { border: 0; }
+    .decision-list li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 900; }
+    .clean-list li::before { content: "→"; position: absolute; left: 0; color: var(--accent); font-weight: 900; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 12px 14px; color: var(--muted); border-bottom: 2px solid var(--ink); font-size: .72rem; letter-spacing: .08em; text-align: left; text-transform: uppercase; }
+    td { padding: 17px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    .number { width: 48px; color: var(--accent); font-family: Georgia, serif; font-weight: 700; }
+    .empty { color: var(--muted); font-style: italic; }
+    .table-empty { text-align: center; }
+    details summary { cursor: pointer; color: var(--accent); font-weight: 750; }
+    .transcript { margin-top: 25px; border-top: 1px solid var(--line); }
+    .transcript-row { display: grid; grid-template-columns: 92px 1fr; gap: 20px; padding: 17px 0; border-bottom: 1px solid var(--line); }
+    .transcript-row time { color: var(--accent); font: 700 .78rem/1.75 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    footer { padding: 32px 4px 0; color: var(--muted); font-size: .77rem; text-align: center; }
+    @media (max-width: 760px) {
+      .page { padding: 36px 15px 60px; } .hero { border-radius: 20px; }
+      .meta-grid { grid-template-columns: repeat(2, 1fr); }
+      .discussion-grid { grid-template-columns: 1fr; }
+      .open-grid { grid-template-columns: 1fr; }
+      table, tbody, tr, td { display: block; } thead { display: none; }
+      tr { padding: 12px 0; border-bottom: 1px solid var(--line); }
+      td { display: grid; grid-template-columns: 90px 1fr; padding: 7px 4px; border: 0; }
+      td::before { content: attr(data-label); color: var(--muted); font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+      td.number { display: none; } .table-empty { display: block; }
+      .transcript-row { grid-template-columns: 1fr; gap: 2px; }
+    }
+    @media print {
+      body { background: #fff; } .page { max-width: none; padding: 0; }
+      .hero, section { box-shadow: none; break-inside: avoid; } nav { display: none; }
+      details:not([open]) > *:not(summary) { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <p class="eyebrow">Meeting minutes</p>
+      <h1>Plan Expire အခြေအနေ UI နှင့် Extend လုပ်ဆောင်ချက်များ</h1>
+      <div class="meta-grid">
+        <div class="meta"><b>Source</b><span>Screen Recording 2026-10-22 084815.mp4</span></div>
+        <div class="meta"><b>Duration</b><span>00:06:34</span></div>
+        <div class="meta"><b>Language</b><span>my</span></div>
+        <div class="meta"><b>Transcription</b><span>gemini-3.8-flash-medium</span></div>
+        <div class="meta"><b>Meeting date</b><span>Not stated</span></div>
+        <div class="meta"><b>Generated</b><span>2026-10-22 09:59 Myanmar Standard Time</span></div>
+      </div>
+    </header>
+    <nav aria-label="Report sections">
+      <a href="#summary">Summary</a><a href="#discussion">Discussion</a>
+      <a href="#decisions">Decisions</a><a href="#actions">Actions</a>
+      <a href="#follow-up">Follow-up</a><a href="#open-items">Open items</a>
+      <a href="#transcript">Transcript</a>
+    </nav>
+    <main>
+      <section id="summary"><div class="section-heading"><span>01</span><h2>Executive summary</h2></div><p class="summary">Plan expire ဖြစ်နေသော်လည်း UI တွင် မပြသသည့် ပြဿနာကို ဆွေးနွေးခဲ့သည်။ Individual user နှင့် organization အတွက် expired status ပြသပြီး သက်ဆိုင်ရာသူက plan ကို extend လုပ်နိုင်ရန် action ထည့်ရန် သဘောတူခဲ့သည်။ Organization member များသည် expired status ကိုသာ မြင်ရပြီး ကိုယ်တိုင် extend လုပ်ခွင့်မရှိဘဲ organization owner က လုပ်ပေးရမည်။ Organization နှင့် member များ၏ expire အခြေအနေကို စမ်းသပ်ရန် backend ဘက်မှ plan expire လုပ်ပေးဖို့ လိုနိုင်သည်။</p></section>
+      <section id="discussion"><div class="section-heading"><span>02</span><h2>Discussion points</h2></div><div class="discussion-grid"><article class="discussion-card"><h3>Individual user plan expire UI</h3><span class="source-time">00:00:00</span><p>Individual user ၏ subscription card တွင် plan expire ဖြစ်ပါက လက်ရှိ status နေရာ၌ expired ဟု ပြသရန်နှင့် plan ကို ပြန်ဝယ်နိုင်မည့် action button ထည့်ရန် ဆွေးနွေးခဲ့သည်။ Action ကိုနှိပ်လျှင် လက်ရှိ plan ဝယ်သည့် flow နှင့် API ကို အသုံးပြုရန် ပြောခဲ့သည်။</p></article><article class="discussion-card"><h3>Organization နှင့် member plan များ</h3><span class="source-time">00:03:06</span><p>Organization တစ်ခုလုံး၏ plan နှင့် organization အတွင်းရှိ member တစ်ဦးချင်း၏ plan များ expire ဖြစ်ပါက expired status နှင့် extend action ကို သက်ဆိုင်ရာနေရာတွင် ပြရန် ဆွေးနွေးခဲ့သည်။ Organization member သည် expired status ကိုသာ မြင်ရမည်ဖြစ်ပြီး ကိုယ်တိုင် extend မလုပ်နိုင်ပါ။</p></article><article class="discussion-card"><h3>Expire အခြေအနေ စမ်းသပ်ခြင်း</h3><span class="source-time">00:06:00</span><p>လက်ရှိ backend တွင် cron job မရှိသဖြင့် organization နှင့် member plan များကို စမ်းသပ်ရန် backend ဘက်မှ သက်ဆိုင်ရာ user ၏ plan ကို expire လုပ်ပေးရန် ပြောရမည်ဟု ဆွေးနွေးခဲ့သည်။</p></article></div></section>
+      <section id="decisions"><div class="section-heading"><span>03</span><h2>Key decisions</h2></div><ul class="decision-list"><li>Individual user plan expire ဖြစ်ပါက subscription card တွင် expired status နှင့် plan ကို ပြန်ဝယ်နိုင်မည့် action ထည့်မည်။ Action သည် လက်ရှိ plan ဝယ်သည့် flow နှင့် API ကို အသုံးပြုမည်။ <span class="source-time">00:01:06</span></li><li>Organization plan နှင့် organization member တစ်ဦးချင်း၏ plan များအတွက် expire ဖြစ်ပါက expired status နှင့် extend action ကို ပြမည်။ <span class="source-time">00:04:32</span></li><li>Organization member များသည် expired status ကိုသာ မြင်ရပြီး ကိုယ်တိုင် extend လုပ်ခွင့်မရှိပါ။ Extend ကို organization owner က လုပ်ပေးရမည်။ <span class="source-time">00:05:14</span></li></ul></section>
+      <section id="actions"><div class="section-heading"><span>04</span><h2>Action items</h2></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Action</th><th>Owner</th><th>Deadline</th></tr></thead><tbody><tr><td class="number">01</td><td data-label="Action">Individual user subscription card တွင် expired status နှင့် plan ပြန်ဝယ်ရန် action ထည့်ပြီး လက်ရှိ plan ဝယ်သည့် flow/API သို့ ချိတ်ဆက်ရန်။</td><td data-label="Owner">Not specified</td><td data-label="Deadline">Not specified</td></tr><tr><td class="number">02</td><td data-label="Action">Organization plan နှင့် organization member plan များအတွက် expired status နှင့် သင့်လျော်သော extend action ထည့်ရန်။ Member များအတွက် ကိုယ်တိုင် extend လုပ်ခွင့် မပေးရန်။</td><td data-label="Owner">Not specified</td><td data-label="Deadline">Not specified</td></tr><tr><td class="number">03</td><td data-label="Action">Organization နှင့် member plan များ၏ expire အခြေအနေကို စမ်းသပ်ရန် backend ဘက်ကို ဆက်သွယ်ပြီး သက်ဆိုင်ရာ user ၏ plan ကို expire လုပ်ပေးရန် တောင်းဆိုရန်။</td><td data-label="Owner">Not specified</td><td data-label="Deadline">Not specified</td></tr></tbody></table></div></section>
+      <section id="follow-up"><div class="section-heading"><span>05</span><h2>Follow-up points</h2></div><ul class="clean-list"><li>အလုပ်များပြီးပါက ပြန်လည်အသိပေးရန်။</li></ul></section>
+      <section id="open-items"><div class="section-heading"><span>06</span><h2>Open items &amp; uncertainties</h2></div><div class="open-grid"><div><h3>Blockers</h3><ul class="clean-list"><li>Backend တွင် cron job မရှိသဖြင့် organization နှင့် member plan များ၏ expire အခြေအနေကို စမ်းသပ်ရာတွင် backend ဘက်မှ plan ကို ကိုယ်တိုင် expire လုပ်ပေးရန် လိုအပ်သည်။</li></ul></div><div><h3>Open questions</h3><p class="empty">None recorded</p></div><div><h3>Uncertainties</h3><ul class="clean-list"><li>Implementation လုပ်မည့်သူနှင့် deadline ကို transcript တွင် အတိအကျ မဖော်ပြထားပါ။</li></ul></div></div></section>
+      <section id="transcript"><div class="section-heading"><span>07</span><h2>Full transcript</h2></div><details><summary>Show timestamped transcript</summary><div class="transcript"><div class="transcript-row"><time>00:00:00</time><p>အဲ၊ ဟိုဟာ အစ်ကိုတို့ ဒီ individual user မှာဆိုလို့ရှိရင် plan expire ဖြစ်သွားတဲ့အချိန် UI မှာ ဘာလဲ၊ expire အဲ action ဆိုတဲ့ button ပေါ့၊ ပေးဖို့ရယ်၊</p></div><div class="transcript-row"><time>00:00:11</time><p>ပြီးရင် expire ဖြစ်သွားတယ်ဆိုတဲ့ အကြောင်းပြဖို့ရယ်၊ ပြီးရင် အဲဒီကောင် action ကို နှိပ်လိုက်လို့ရှိလို့ရှိရင် အဲဒီ plan ကိုပဲ ထပ်ဝယ်တဲ့ API ခေါ်ဖို့အတွက် လုပ်ဖို့၊ အဲဒါက</p></div><div class="transcript-row"><time>00:00:38</time><p>အင်း၊ မရှိပါဘူး။</p></div><div class="transcript-row"><time>00:00:42</time><p>ဟို၊ အစ်ကို့ account ပေးလိုက်မယ်ကွာ၊ သိလား။ အဲဒီ အစ်ကို့ account ထဲမှာ ဝင်ကြည့်လိုက်ရင် expire ဖြစ်နေတယ်ကွာ၊ သိလား၊ plan က။ ဒါပေမဲ့ UI မှာကျတော့ expire ဖြစ်နေတယ်လို့ မပြဘူး ဖြစ်နေတယ်၊ သိလား။</p></div><div class="transcript-row"><time>00:00:57</time><p>အင်း၊ ဟုတ်တယ်။ individual ရဲ့ drawer မှာ အဲဒီမှာ ဟိုဟာလေ subscription card လေး ရှိတယ်လေ။</p></div><div class="transcript-row"><time>00:01:06</time><p>အဲဒီကောင်က အဲ အစ်ကိုတို့ expire ဖြစ်သွားပြီဆိုလို့ရှိရင် ဒီ အဲဒီ now နေရာမှာ expire ဆိုပြီးတော့ ပြဖို့ရယ်၊ ပြီးလို့ရှိရင် အဲဒီ card ထဲမှာပဲ ဟို action action လုပ်ဖို့အတွက် action button တစ်ခု ထည့်ပေးဖို့ရယ်၊</p></div><div class="transcript-row"><time>00:01:17</time><p>အဲဒီကောင်ကို နှိပ်လိုက်လို့ရှိရင်ကျတော့ အစ်ကိုတို့ ပုံမှန်အတိုင်းပဲ ဒီ plan ဝယ်တဲ့ flow အတိုင်းပဲ ပြန်သွားဖို့။</p></div><div class="transcript-row"><time>00:01:27</time><p>အဲ၊ အခု လက်ရှိ plan ဝယ်တဲ့ API ပဲ။</p></div><div class="transcript-row"><time>00:01:37</time><p>အကုန်လုံးရဲ့ account</p></div><div class="transcript-row"><time>00:02:07</time><p>screen မြင်ရလား။</p></div><div class="transcript-row"><time>00:02:11</time><p>သူ့ရဲ့ expire time က အဲ့ဒီ expire ဖြစ်နေပြီကွာ။ ဟို backend ဘက်ကို claim ပေးခိုင်းရမလား။</p></div><div class="transcript-row"><time>00:02:23</time><p>ဒီမှာကွာ expire က ၁၀ လပိုင်း ၁၂ ရက်နေ့ကတည်းက ဖြစ်နေပြီနော်။ ဒါပေမဲ့ UI မှာကျတော့ expire ဖြစ်နေပြီဆိုပြီးတော့ မပြဘူးကွာ။</p></div><div class="transcript-row"><time>00:02:35</time><p>အဲ၊ အဲ့တော့ ဒီ edit နေရာမှာ expired ဆိုပြီးတော့ အနီလေးနဲ့ ပြလိုက်ပေါ့နော်။ ပြပြီးတော့ ဒီနေရာမှာ</p></div><div class="transcript-row"><time>00:02:49</time><p>ဒီနေရာမှာပဲဖြစ်ဖြစ်ပေါ့နော်၊ ဟို action လုပ်လိုက်ပေါ့။</p></div><div class="transcript-row"><time>00:02:57</time><p>ဒီနေရာမှာ မလုပ်လည်း ဒီကြားထဲမှာပေါ့၊ PNP ရဲ့ ဒီဘက်မှာ ပြပေးလိုက်ပေါ့။</p></div><div class="transcript-row"><time>00:03:06</time><p>ဒါကကျတော့ individual user အတွက်ပေါ့။ ဟို organization အတွက်ကကျတော့ organization မှာကျတော့ နှစ်နေရာ</p></div><div class="transcript-row"><time>00:04:00</time><p>ဒါလုပ်ပေးရမှာ။ organization တစ်ခုလုံးအတွက်ရယ်၊ ပြီးလို့ရှိရင် ဒီ ဟိုဟာ organization ထဲမှာရှိတဲ့ member တွေက ဝယ်ထားတဲ့ဟာ expire ဖြစ်နေရင်လည်း လုပ်ပေးမယ်။</p></div><div class="transcript-row"><time>00:04:21</time><p>အဲ၊ ဒီမှာကွာ ဟို subscription တွေ ရှိတယ်။</p></div><div class="transcript-row"><time>00:04:28</time><p>အဲ၊ ဟုတ်တယ်။ ဒီမှာ ဟုတ်တယ်။</p></div><div class="transcript-row"><time>00:04:32</time><p>ဒီမှာကကျတော့ ဟိုဟာ သူက ဒီကောင်ရှိတယ်ကွာ။ ဒီ individual user တစ်ခုချင်းစီအတွက်ဆိုလို့ရှိရင် အဲ တူတူပါပဲ၊ organization ကလည်း တစ်ခုပဲ ရှိမှာပဲနော်။</p></div><div class="transcript-row"><time>00:04:42</time><p>အဲ၊ အကုန်လုံးအတွက်ကွာ ပြပေးရမယ်။ expire ဖြစ်နေလို့ရှိရင် ဒီ expired ဆိုတဲ့ button နဲ့ ပြီးလို့ရှိရင် extend လုပ်ဖို့အတွက် action button ထည့်ပေးရမှာကွာ။ အဲ့ကောင် တူတူ၊ သူက plan ဝယ်တဲ့ကောင်၊ plan create လုပ်တဲ့ကောင်တွေ အကုန်လုံး တူတူပဲ။</p></div><div class="transcript-row"><time>00:04:58</time><p>အဲ့ဒါ ရှိမယ်။ ဪ၊ ဟိုဟာ တစ်ခုရှိသေးတယ်ကွာ၊ သိလား၊ ဒီ</p></div><div class="transcript-row"><time>00:05:04</time><p>organization ထဲက member အနေနဲ့ login ဝင်ထားတယ်ဆိုပါတော့ကွာ၊ သိလား။ ကိုယ်တို့ကလေ ဒီ zawthet1 ဆိုတဲ့ကောင်ကကျတော့ organization တစ်ခုတည်းအောက်က member ကွာ။</p></div><div class="transcript-row"><time>00:05:14</time><p>အဲ့ကောင်နဲ့ login ဝင်ထားလို့ရှိရင်ကျတော့ ကိုယ်တို့ ခုနက drawer ထဲမှာ plan card တော့ ပြတယ်။ ဒါပေမဲ့ သူက expire ဖြစ်နေလို့ပဲ ပြရမယ်ကွာ။ သူကိုယ်တိုင် extend လုပ်လို့ မရဘူး။</p></div><div class="transcript-row"><time>00:05:27</time><p>အင်း၊ organization ထဲက member ဆိုလို့ရှိရင်ကျတော့ ဒီ expire ပဲ ပြမယ်၊ extend လုပ်လို့ မရဘူး။ ဘာလို့လဲဆိုတော့ organization owner က ဟိုဘက် portal ဘက်မှာ extend လုပ်ပေးမှ သူကိုယ်တိုင် extend ဖြစ်မှာကွာ၊ အဲလို။</p></div><div class="transcript-row"><time>00:05:40</time><p>အဲ့ဒါပါပဲ။ လောလောဆယ် အဲ့သုံးခု အရင် ထိန်းလိုက်ပေါ့ကွာနော်။</p></div><div class="transcript-row"><time>00:05:46</time><p>အဲ၊ အခြား လုပ်နေတာတော့ မရှိတော့ဘူးမလား၊ ညီ။ ဟုတ်ကဲ့၊ ဟုတ်ကဲ့။</p></div><div class="transcript-row"><time>00:05:51</time><p>အဲ့ဒါ လုပ်လိုက်နော်။ အဲ့ဒါ ပြီးမှ ပြောလိုက်တော့။</p></div><div class="transcript-row"><time>00:05:55</time><p>အင်း၊ အဲ့ဆို version new ယူတော့ကွာ။ ဟုတ်ကဲ့၊ ဟုတ်ကဲ့။ အာ၊ ဒါပဲနော်။</p></div><div class="transcript-row"><time>00:06:00</time><p>ဟိုဟာ၊ အဲ plan expire အတွက် လုပ်ချင်တယ်ဆိုလို့ရှိရင်တော့ အဲ့ဒီ ဟို backend ဘက်ကို သွားပြီးတော့ ပြင်ခိုင်းမှ ရမလား။</p></div><div class="transcript-row"><time>00:06:06</time><p>အခု လောလောဆယ် သူတို့က cron job မထည့်ထားဘူးကွ။ မထည့်ထားတော့ expire စမ်းဖို့အတွက်ဆိုလို့ရှိရင်ကျတော့ အစ်ကို ခုနက ပေးလိုက်တဲ့ဟာ individual အတွက်တော့ အဆင်ပြေလိမ့်မယ်။</p></div><div class="transcript-row"><time>00:06:15</time><p>ဒါပေမဲ့ organization နဲ့ organization ထဲက member တစ်ယောက်ချင်းစီကို expire လုပ်ချင်ရင်တော့ backend ဘက်ကို သွားပြောမှ ရမလား။</p></div><div class="transcript-row"><time>00:06:22</time><p>အဲ၊ user info ယူသွားပြီးတော့ကွာ ဒီ အဲ့ user မှာရှိတဲ့ plan ကို expire လုပ်ပေးဖို့ ပြောလိုက်ပေါ့။ အင်း၊ ဟုတ်တယ်နော်။</p></div></div></details></section>
+    </main>
+    <footer>Generated from Screen Recording 2026-10-22 084815.mp4 · Transcription: gemini-3.8-flash-medium · Analysis: openai/gpt-6-luna / high</footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,3 @@
+interface:
+  display_name: "Meeting Minutes Summarizer"
+  short_description: "Transcript to summary, decisions, and actions"

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meeting Minutes</title>
+  <style>
+    :root { --ink:#17202a; --muted:#65717e; --paper:#fbfaf7; --card:#fff;
+      --line:#e7e1d8; --accent:#126b63; --warm:#f2b84b; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper);
+      font-family:Inter,"Noto Sans Myanmar","Myanmar Text",system-ui,sans-serif; }
+    body::before { content:""; display:block; height:6px;
+      background:linear-gradient(90deg,var(--accent),var(--warm)); }
+    main { width:min(1040px,calc(100% - 32px)); margin:0 auto; padding:72px 0 90px; }
+    .eyebrow { margin:0 0 12px; color:var(--accent); font-size:.75rem;
+      font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+    h1 { margin:0; font:700 clamp(2.4rem,7vw,5rem)/1.05 Georgia,
+      "Noto Sans Myanmar",serif; letter-spacing:-.04em; }
+    .intro { max-width:650px; margin:20px 0 45px; color:var(--muted);
+      font-size:1.08rem; line-height:1.7; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+    .card { display:flex; min-height:190px; padding:24px; border:1px solid var(--line);
+      border-radius:20px; color:inherit; background:var(--card); text-decoration:none;
+      flex-direction:column; box-shadow:0 10px 35px rgba(29,42,50,.06);
+      transition:transform .18s ease,box-shadow .18s ease; }
+    .card:hover { transform:translateY(-3px); box-shadow:0 16px 45px rgba(29,42,50,.11); }
+    .card span { color:var(--accent); font-size:.72rem; font-weight:800;
+      letter-spacing:.12em; text-transform:uppercase; }
+    .card strong { margin:18px 0; font:700 1.25rem/1.45 Georgia,
+      "Noto Sans Myanmar",serif; overflow-wrap:anywhere; }
+    .card small { margin-top:auto; color:var(--accent); font-weight:750; }
+    .empty { padding:28px; border:1px dashed var(--line); border-radius:18px;
+      color:var(--muted); }
+  </style>
+</head>
+<body><main><p class="eyebrow">Archive</p><h1>Meeting Minutes</h1>
+<p class="intro">Generated meeting reports. Select a recording to view its summary,
+decisions, action items, and timestamped transcript.</p><div class="grid"><a class="card" href="Screen%20Recording%202026-10-22%20084815.html"><span>Meeting minutes</span><strong>Screen Recording 2026-10-22 084815</strong><small>Open report →</small></a></div>
+</main></body></html>
