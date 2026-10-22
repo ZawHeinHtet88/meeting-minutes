@@ -15,6 +15,8 @@ Convert local meeting recordings into accurate Burmese transcripts and standalon
 - Project-local `meeting-minutes-summarizer` OpenCode skill
 - Long-transcript analysis chunking and consolidation
 - Content-addressed audio, transcript, cleanup, and analysis caches
+- Per-chunk transcript caching so interrupted long recordings resume instead of restarting
+- Automatic subdivision of a chunk when both Gemini transcription prompts are filter-blocked
 - Responsive, safely escaped standalone HTML
 
 ## Prerequisites
@@ -123,6 +125,11 @@ Reports are written directly into `OUTPUT_DIR`, and `index.html` is regenerated 
 5. Python renders the escaped standalone HTML report.
 
 Transcript caches include the audio hash, Antigravity model, language, prompt version, and cache format. AI caches include the transcript hash and exact OpenCode model/variant. Deleting `CACHE_DIR` is safe; it only causes work to run again.
+
+For long recordings, every successful audio chunk is saved immediately under
+`CACHE_DIR/transcript_chunks/`. If a later chunk fails, run the same command again
+without `--force`; completed chunks are reused. When both prompts are blocked by a
+Gemini filter, only that chunk is split into shorter clips and retried automatically.
 
 ## Static hosting
 

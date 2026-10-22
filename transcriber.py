@@ -25,6 +25,11 @@ SAMPLE_WIDTH_BYTES = 2
 MAX_CHUNK_SECONDS = 120
 PLACEHOLDER_TEXTS = {"spoken text", "speech", "transcript", "text"}
 
+
+class GeminiFilterBlockedError(RuntimeError):
+    """Raised only after both prompts are blocked by Gemini's content filter."""
+
+
 def _sha256_file(path: Path, chunk_size: int = 4 * 1024 * 1024) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as source:
@@ -150,6 +155,7 @@ class Transcriber:
         self.project_dir = Path(__file__).resolve().parent
         self._resolved_executable: str | None = None
         self._model_checked = False
+        self._active_progress_fraction = 0.0
 
     def _executable_path(self) -> str:
         if self._resolved_executable is not None:
@@ -246,12 +252,20 @@ class Transcriber:
         chunks = self._audio_chunks(media_path, media_hash)
         segments: list[dict[str, Any]] = []
         for index, (chunk_path, offset, chunk_duration) in enumerate(chunks, start=1):
+            self._active_progress_fraction = (index - 1) / len(chunks)
             if self.progress:
                 self.progress(
-                    (index - 1) / len(chunks),
+                    self._active_progress_fraction,
                     f"Antigravity transcription {index}/{len(chunks)}",
                 )
-            response = self._invoke_chunk(chunk_path, chunk_duration)
+            response, loaded = self._transcribe_chunk_cached(
+                chunk_path, chunk_duration, force=force
+            )
+            if loaded and self.progress:
+                self.progress(
+                    index / len(chunks),
+                    f"Loaded cached Antigravity chunk {index}/{len(chunks)}",
+                )
             segments.extend(
                 _normalize_segments(response.get("segments"), offset, chunk_duration)
             )
@@ -323,6 +337,109 @@ class Transcriber:
                 index += 1
             return chunks
 
+    def _chunk_cache_path(self, audio_path: Path, duration: float) -> Path:
+        identity = json.dumps(
+            {
+                "chunk_sha256": _sha256_file(audio_path),
+                "duration": round(duration, 3),
+                "model": self.model_name,
+                "language": self.language,
+                "prompt_version": TRANSCRIPTION_PROMPT_VERSION,
+                "cache_version": TRANSCRIPT_CACHE_VERSION,
+            },
+            sort_keys=True,
+        ).encode("utf-8")
+        return self.cache_dir / "transcript_chunks" / (
+            f"{hashlib.sha256(identity).hexdigest()}.json"
+        )
+
+    def _transcribe_chunk_cached(
+        self,
+        audio_path: Path,
+        duration: float,
+        force: bool = False,
+        split_depth: int = 0,
+    ) -> tuple[dict[str, Any], bool]:
+        cache_path = self._chunk_cache_path(audio_path, duration)
+        if cache_path.exists() and not force:
+            try:
+                cached = json.loads(cache_path.read_text(encoding="utf-8"))
+                if _valid_chunk_response(cached):
+                    return cached, True
+            except (OSError, json.JSONDecodeError):
+                pass
+
+        try:
+            response = self._invoke_chunk(audio_path, duration)
+        except GeminiFilterBlockedError:
+            if duration <= 30 or split_depth >= 2:
+                raise
+            if self.progress:
+                self.progress(
+                    self._active_progress_fraction,
+                    f"Splitting filter-blocked {duration:.0f}s audio chunk",
+                )
+            segments: list[dict[str, Any]] = []
+            for child_path, offset, child_duration in self._split_audio_in_half(
+                audio_path
+            ):
+                child, _ = self._transcribe_chunk_cached(
+                    child_path,
+                    child_duration,
+                    force=force,
+                    split_depth=split_depth + 1,
+                )
+                segments.extend(
+                    _normalize_segments(
+                        child.get("segments"), offset, child_duration
+                    )
+                )
+            response = {"segments": segments}
+
+        if not _valid_chunk_response(response):
+            raise RuntimeError("Antigravity returned an invalid diarized transcript")
+        _atomic_json_write(cache_path, response)
+        return response, False
+
+    def _split_audio_in_half(
+        self, audio_path: Path
+    ) -> list[tuple[Path, float, float]]:
+        audio_hash = _sha256_file(audio_path)
+        split_dir = self.cache_dir / "filter_chunks" / audio_hash
+        split_dir.mkdir(parents=True, exist_ok=True)
+        children: list[tuple[Path, float, float]] = []
+        with wave.open(str(audio_path), "rb") as source:
+            channels = source.getnchannels()
+            sample_width = source.getsampwidth()
+            frame_rate = source.getframerate()
+            total_frames = source.getnframes()
+            first_frames = total_frames // 2
+            frame_counts = (first_frames, total_frames - first_frames)
+            frame_offset = 0
+            for index, frame_count in enumerate(frame_counts):
+                child_path = split_dir / f"{index:04d}.wav"
+                expected_size = 44 + frame_count * channels * sample_width
+                if not child_path.exists() or child_path.stat().st_size != expected_size:
+                    audio = source.readframes(frame_count)
+                    temporary = child_path.with_suffix(".wav.tmp")
+                    with wave.open(str(temporary), "wb") as target:
+                        target.setnchannels(channels)
+                        target.setsampwidth(sample_width)
+                        target.setframerate(frame_rate)
+                        target.writeframes(audio)
+                    os.replace(temporary, child_path)
+                else:
+                    source.setpos(frame_offset + frame_count)
+                children.append(
+                    (
+                        child_path,
+                        frame_offset / frame_rate,
+                        frame_count / frame_rate,
+                    )
+                )
+                frame_offset += frame_count
+        return children
+
     def _invoke_chunk(self, audio_path: Path, duration: float) -> dict[str, Any]:
         try:
             attachment = audio_path.relative_to(self.project_dir).as_posix()
@@ -389,7 +506,10 @@ are seconds from 0 to {duration:.3f} in this clip.
                     or _has_missing_speakers(structured)
                 ):
                     if self.progress:
-                        self.progress(0.0, "Retrying invalid diarized transcript response")
+                        self.progress(
+                            self._active_progress_fraction,
+                            "Retrying invalid diarized transcript response",
+                        )
                     continue
                 if _has_placeholder_segments(structured):
                     raise RuntimeError(
@@ -405,8 +525,19 @@ are seconds from 0 to {duration:.3f} in this clip.
                 and "blocked by Gemini's filters" in response
             ):
                 if self.progress:
-                    self.progress(0.0, "Retrying false-positive Gemini filter block")
+                    self.progress(
+                        self._active_progress_fraction,
+                        "Retrying false-positive Gemini filter block",
+                    )
                 continue
+            if (
+                attempt == 1
+                and isinstance(response, str)
+                and "blocked by Gemini's filters" in response
+            ):
+                raise GeminiFilterBlockedError(
+                    "Gemini filter-blocked both transcription prompts"
+                )
             if not isinstance(response, str):
                 raise RuntimeError("Antigravity returned no structured transcript")
             try:
@@ -422,7 +553,10 @@ are seconds from 0 to {duration:.3f} in this clip.
                     _has_placeholder_segments(parsed) or _has_missing_speakers(parsed)
                 ):
                     if self.progress:
-                        self.progress(0.0, "Retrying invalid diarized transcript response")
+                        self.progress(
+                            self._active_progress_fraction,
+                            "Retrying invalid diarized transcript response",
+                        )
                     continue
                 if _has_placeholder_segments(parsed):
                     raise RuntimeError(
@@ -516,6 +650,15 @@ def _has_missing_speakers(value: dict[str, Any]) -> bool:
         or not isinstance(segment.get("speaker"), str)
         or not segment["speaker"].strip()
         for segment in segments
+    )
+
+
+def _valid_chunk_response(value: Any) -> bool:
+    return (
+        isinstance(value, dict)
+        and isinstance(value.get("segments"), list)
+        and not _has_placeholder_segments(value)
+        and not _has_missing_speakers(value)
     )
 
 
